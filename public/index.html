@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Todo List</title>
+    <!-- Bootstrap 5 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We"
+      crossorigin="anonymous"
+    />
+  </head>
+  <body>
+    <h1>Todo List</h1>
+    <div class="justify-content-center">
+      <ul class="list-group col-md-8 mx-auto" id="tasks"></ul>
+      <form id="add-task" class="col-md-10 my-3 mx-auto text-center">
+        <label>
+          Title:
+          <input type="text" name="title" required />
+        </label>
+        <label>
+          Description:
+          <input type="text" name="description" required />
+        </label>
+        <button type="submit" id="add-task-btn">Add Task</button>
+      </form>
+    </div>
+
+    <script>
+      async function addTask(event) {
+        event.preventDefault();
+        const title = document.querySelector('input[name="title"]').value;
+        const description = document.querySelector(
+          'input[name="description"]'
+        ).value;
+        const data = { title, description };
+        const response = await fetch("/tasks", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        });
+        const json = await response.json();
+        getTasks();
+        console.log(json);
+      }
+
+      async function getTasks() {
+        const response = await fetch("/tasks", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        const json = await response.json();
+        const taskList = document.querySelector("#tasks");
+        taskList.innerHTML = "";
+
+        json.forEach((task) => {
+          const taskItem = ` <li class="list-group-item" id="list${task._id}">
+                <div class="row">
+                <div class="col-1 my-auto">
+                <input class="" type="checkbox" id="check${
+                  task._id
+                }" onclick="done('${task._id}')" ${
+            task.completed ? "checked" : ""
+          }>
+                </div>
+                <div class="col-6">
+                    <span class=" h4" id="text${task._id}"> ${task.title} -  ${
+            task.description
+          } </span>
+                </div>
+                <div class="col-5 text-end">
+                     <button class=" btn btn-dark" onclick="deleteTask('${
+                       task._id
+                     }')">Delete</button>
+                </div>
+                 </div>
+                </li> `;
+          taskList.innerHTML += taskItem;
+        });
+        console.log(json);
+      }
+
+      async function done(id) {
+        const checkbox = document.querySelector(`#check${id}`);
+        const completed = checkbox.checked;
+        const data = { completed };
+
+        const response = await fetch(`/tasks/${id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        });
+
+        console.log(await response.json());
+        getTasks();
+      }
+
+      async function deleteList(id) {
+        console.log(id);
+        const response = await fetch(`/tasks/${id}`, {
+          method: "DELETE",
+        });
+
+        console.log(await response.json());
+        getTasks();
+      }
+
+      function deleteTask(id) {
+        fetch(`/tasks/${id}`, {
+          method: "DELETE",
+        }).then(() => {
+          getTasks();
+        });
+      }
+
+      document
+        .querySelector("#add-task-btn")
+        .addEventListener("click", addTask);
+
+      document.addEventListener("DOMContentLoaded", function () {
+        getTasks();
+      });
+    </script>
+  </body>
+</html>
